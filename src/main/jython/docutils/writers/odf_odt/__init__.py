@@ -28,6 +28,9 @@ from docutils import frontend, nodes, utils, writers, languages
 from docutils.readers import standalone
 from docutils.transforms import references
 
+from java.io import File
+from java.io import FileInputStream
+from org.apache.sanselan import Sanselan
 
 WhichElementTree = ''
 try:
@@ -730,6 +733,7 @@ class Writer(writers.Writer):
 # class ODFTranslator(nodes.SparseNodeVisitor):
 
 class ODFTranslator(nodes.GenericNodeVisitor):
+    imageIndex = 1
 
     used_styles = (
         'attribution', 'blockindent', 'blockquote', 'blockquote-bulletitem',
@@ -871,6 +875,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
         self.dom_stylesheet = None
         self.table_styles = None
         self.in_citation = False
+        self.imageIndex = 1
 
 
     def get_str_stylesheet(self):
@@ -2064,7 +2069,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
                     if docsource:
                         dirname = os.path.dirname(docsource)
                         if dirname:
-                            source = '%s%s%s' % (dirname, os.sep, source, )
+                            source = '%s%s%s' % (dirname, os.sep, source.replace('+',' '), )
                 if not self.check_file_exists(source):
                     self.document.reporter.warning(
                         'Cannot find image file %s.' % (source, ))
@@ -2154,6 +2159,41 @@ class ODFTranslator(nodes.GenericNodeVisitor):
     def get_image_scaled_width_height(self, node, source):
         scale = self.get_image_scale(node)
         width = self.get_image_width_height(node, 'width')
+        height =self.get_image_width_height(node, 'height')
+        dpi = (72, 72)
+        #if PIL is not None and source in self.image_dict:
+        if source in self.image_dict:
+            filename, destination = self.image_dict[source]
+            #imageobj = PIL.Image.open(filename, 'r')
+            imageobj = Sanselan.getImageInfo(File(filename))
+            hdpi = imageobj.getPhysicalHeightDpi()
+            wdpi = imageobj.getPhysicalWidthDpi()
+            dpi=(hdpi, wdpi)
+            # dpi information can be (xdpi, ydpi) or xydpi
+            #try: iter(dpi)
+            #except: dpi = (dpi, dpi)
+        else:
+            imageobj = None
+        if width is None or height is None:
+            if imageobj is None:
+                raise RuntimeError(
+                    'image size not fully specified and Sanselan could not read image info')
+            if width is None: width = [imageobj.getWidth(), 'px']
+            if height is None: height = [imageobj.getHeight(), 'px']
+        width[0] *= scale
+        height[0] *= scale
+        
+        if width[1] == 'px': width = [width[0] / dpi[0], 'in']
+        if height[1] == 'px': height = [height[0] / dpi[1], 'in']
+
+        width[0] = str(width[0])
+        height[0] = str(height[0])
+        return ''.join(width), ''.join(height)
+    
+    
+    def get_image_scaled_width_height_old(self, node, source):
+        scale = self.get_image_scale(node)
+        width = self.get_image_width_height(node, 'width')
         height = self.get_image_width_height(node, 'height')
 
         dpi = (72, 72)
@@ -2166,14 +2206,12 @@ class ODFTranslator(nodes.GenericNodeVisitor):
             except: dpi = (dpi, dpi)
         else:
             imageobj = None
-
         if width is None or height is None:
-            if imageobj is None:
-                raise RuntimeError(
-                    'image size not fully specified and PIL not installed')
+            #if imageobj is None:
+            #    raise RuntimeError(
+            #        'image size not fully specified and PIL not installed')
             if width is None: width = [imageobj.size[0], 'px']
             if height is None: height = [imageobj.size[1], 'px']
-
         width[0] *= scale
         height[0] *= scale
         if width[1] == 'px': width = [width[0] / dpi[0], 'in']
@@ -2331,9 +2369,10 @@ class ODFTranslator(nodes.GenericNodeVisitor):
         #    attrib={'text:style-name': self.rststyle('textbody')})
         attrib={
             'draw:style-name': style_name,
-            'draw:name': 'graphics2',
+            'draw:name': 'graphics' + str(self.imageIndex),
             'draw:z-index': '1',
             }
+        self.imageIndex = self.imageIndex + 1
         if isinstance(node.parent, nodes.TextElement):
             attrib['text:anchor-type'] = 'as-char' #vds
         else:
@@ -2462,7 +2501,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
             #and
             #node.get('hilight', False)
             ):
-            language = node.get('language', 'python')
+            language = node.get('classes')[1] #node.get('language', 'python')
             source = self._add_syntax_highlighting(source, language)
         else:
             source = escape_cdata(source)
@@ -2531,7 +2570,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
                 'style:name': self.rststyle(table_name),
                 'style:family': 'table'}, nsdict=SNSD)
             el1 = SubElement(el, 'style:table-properties', attrib={
-                'style:width': '17.59cm',
+                #'style:width': '7.59cm',
                 'table:align': 'left',
                 'style:shadow': 'none'}, nsdict=SNSD)
             el = SubElement(self.automatic_styles, 'style:style', attrib={
@@ -2867,7 +2906,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
             }, nsdict=SNSD)
         if table_style.backgroundcolor is None:
             el1_1 = SubElement(el1, 'style:table-properties', attrib={
-                #'style:width': '17.59cm',
+                'style:width': '7.59cm',
                 #'table:align': 'margins',
                 'table:align': 'left',
                 'fo:margin-top': '0in',
@@ -2875,7 +2914,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
                 }, nsdict=SNSD)
         else:
             el1_1 = SubElement(el1, 'style:table-properties', attrib={
-                #'style:width': '17.59cm',
+                'style:width': '7.59cm',
                 'table:align': 'margins',
                 'fo:margin-top': '0in',
                 'fo:margin-bottom': '0.10in',
@@ -2918,13 +2957,13 @@ class ODFTranslator(nodes.GenericNodeVisitor):
         self.set_current_element(el4)
         self.current_table_style = el1
         self.table_width = 0.0
-
+  
     def depart_table(self, node):
         attribkey = add_ns('style:width', nsdict=SNSD)
         attribval = '%.4fin' % (self.table_width, )
         el1 = self.current_table_style
         el2 = el1[0]
-        el2.attrib[attribkey] = attribval
+        #el2.attrib[attribkey] = attribval
         self.set_to_parent()
 
     def visit_tgroup(self, node):
@@ -3077,6 +3116,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
                     'text:style-name': self.rststyle('contents-%d' % (idx, )),
                 })
             el3 = SubElement(el2, 'text:index-entry-chapter')
+            el3 = SubElement(el2, 'text:index-entry-tab-stop style:type="left" style:position="0.85cm" style:leader-char=" "')
             el3 = SubElement(el2, 'text:index-entry-text')
             el3 = SubElement(el2, 'text:index-entry-tab-stop', attrib={
                 'style:leader-char': ".",
@@ -3257,7 +3297,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
         if title:
             el1.text = title
         else:
-            el1.text = '%s!' % (label.capitalize(), )
+            el1.text = '%s' % (self.language.labels[label], )
         s1 = self.rststyle('admon-%s-body', ( label, ))
         self.paragraph_style_stack.append(s1)
 

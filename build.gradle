@@ -1,0 +1,47 @@
+buildscript{
+	repositories{
+	mavenLocal()
+	mavenCentral()
+	
+	}
+	dependencies{
+		classpath 'com.github.rzabini:gradle-jython:+'
+	}
+}
+
+apply plugin:'com.github.rzabini.gradle-jython'
+apply plugin:'groovy'
+apply plugin:'maven-publish'
+
+group 'com.github.rzabini'
+
+repositories{
+	mavenLocal()
+}
+
+dependencies{
+	compile localGroovy()
+	compile gradleApi()
+	runtime 'org.apache.sanselan:sanselan:0.97-incubator'
+	compile 'com.github.rzabini:gradle-jython:+'
+}
+
+publishing {
+	publications {
+		plugin(MavenPublication) {
+			from components.java
+		}
+	}
+}
+
+jython {
+    pypackage 'docutils:0.12'
+}
+
+jar {
+	destinationDir file('build/jython')
+	duplicatesStrategy = 'exclude' 
+	from 'src/main/jython'
+	from 'build/jython/docutils-0.12'
+}
+

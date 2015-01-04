@@ -31,6 +31,8 @@ def check_encoding(stream, encoding):
     :True:  if the encoding argument resolves to the same value as `encoding`,
     :False: if the encodings differ.
     """
+    if stream.encoding == None:
+        return None
     try:
         return codecs.lookup(stream.encoding) == codecs.lookup(encoding)
     except (LookupError, AttributeError, TypeError):
