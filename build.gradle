@@ -5,13 +5,14 @@ buildscript{
 	
 	}
 	dependencies{
-		classpath 'com.github.rzabini:gradle-jython:+'
+		classpath 'com.github.rzabini:gradle-jython:1.0.0'
 	}
 }
 
 apply plugin:'com.github.rzabini.gradle-jython'
 apply plugin:'groovy'
 apply plugin:'maven-publish'
+apply from: 'gradle/version.gradle'
 
 group 'com.github.rzabini'
 
@@ -23,7 +24,7 @@ dependencies{
 	compile localGroovy()
 	compile gradleApi()
 	runtime 'org.apache.sanselan:sanselan:0.97-incubator'
-	compile 'com.github.rzabini:gradle-jython:+'
+	compile 'com.github.rzabini:gradle-jython:1.0.0'
 }
 
 publishing {
@@ -36,6 +37,7 @@ publishing {
 
 jython {
     pypackage 'docutils:0.12'
+	pypackage 'Pygments:2.0.2'
 }
 
 jar {
@@ -43,5 +45,6 @@ jar {
 	duplicatesStrategy = 'exclude' 
 	from 'src/main/jython'
 	from 'build/jython/docutils-0.12'
+	from 'build/jython/Pygments-2.0.2'
 }
 
