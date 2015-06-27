@@ -57,7 +57,10 @@ public class Rst2Odt extends JythonTask{
         if (val =~ /\w::/)
             val
         else
-            "replace:: $val"
+        if (val =~ /\.png$/)
+            "image:: $val"
+            else
+                "replace:: $val"
     }
 
     def properties(Closure closure){
