@@ -12,7 +12,9 @@ buildscript{
 apply plugin:'com.github.rzabini.gradle-jython'
 apply plugin:'groovy'
 apply plugin:'maven-publish'
-apply from: 'gradle/version.gradle'
+//apply from: 'gradle/version.gradle'
+
+version '1.0.2-SNAPSHOT'
 
 group 'com.github.rzabini'
 
