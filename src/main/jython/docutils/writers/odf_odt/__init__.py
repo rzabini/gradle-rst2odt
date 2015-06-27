@@ -315,7 +315,8 @@ def ToString(et):
     if sys.version_info >= (3, 2):
         et.write(outstream, encoding="unicode")
     else:
-        et.write(outstream)
+        if not et is None:
+            et.write(outstream)
     s1 = outstream.getvalue()
     outstream.close()
     return s1
@@ -357,9 +358,10 @@ def split_words(line):
 
 
 class TableStyle(object):
-    def __init__(self, border=None, backgroundcolor=None):
+    def __init__(self, border=None, backgroundcolor=None, margin_top=None):
         self.border = border
         self.backgroundcolor = backgroundcolor
+        self.margin_top = margin_top
     def get_border_(self):
         return self.border_
     def set_border_(self, border):
@@ -370,6 +372,11 @@ class TableStyle(object):
     def set_backgroundcolor_(self, backgroundcolor):
         self.backgroundcolor_ = backgroundcolor
     backgroundcolor = property(get_backgroundcolor_, set_backgroundcolor_)
+    def get_margin_top_(self):
+        return self.margin_top_
+    def set_margin_top_(self, margin_top):
+        self.margin_top_ = margin_top
+    margin_top = property(get_margin_top_, set_margin_top_)
 
 BUILTIN_DEFAULT_TABLE_STYLE = TableStyle(
     border = '0.0007in solid #000000')
@@ -926,6 +933,10 @@ class ODFTranslator(nodes.GenericNodeVisitor):
                         'background-color', ))
                     if property is not None and property != 'none':
                         tablestyle.backgroundcolor = property
+                    property = properties.get('{%s}%s' % (CNSD['fo'],
+                        'margin-top', ))
+                    if property is not None and property != 'none':
+                        tablestyle.margin_top = property
                 elif family == 'table-cell':
                     properties = stylenode.find(
                         '{%s}table-cell-properties' % (CNSD['style'], ))
@@ -1381,8 +1392,9 @@ class ODFTranslator(nodes.GenericNodeVisitor):
     def astext(self):
         root = self.content_tree.getroot()
         et = etree.ElementTree(root)
-        s1 = ToString(et)
-        return s1
+        if et is not None:
+            s1 = ToString(et)
+            return s1
 
     def content_astext(self):
         return self.astext()
@@ -2904,19 +2916,22 @@ class ODFTranslator(nodes.GenericNodeVisitor):
                 '%s' % table_name, ( self.table_count, )),
             'style:family': 'table',
             }, nsdict=SNSD)
+        margin_top = '0in'
+        if table_style.margin_top is not None:
+            margin_top = table_style.margin_top
         if table_style.backgroundcolor is None:
             el1_1 = SubElement(el1, 'style:table-properties', attrib={
                 'style:width': '7.59cm',
                 #'table:align': 'margins',
                 'table:align': 'left',
-                'fo:margin-top': '0in',
+                'fo:margin-top': margin_top,
                 'fo:margin-bottom': '0.10in',
                 }, nsdict=SNSD)
         else:
             el1_1 = SubElement(el1, 'style:table-properties', attrib={
                 'style:width': '7.59cm',
                 'table:align': 'margins',
-                'fo:margin-top': '0in',
+                'fo:margin-top': margin_top,
                 'fo:margin-bottom': '0.10in',
                 'fo:background-color': table_style.backgroundcolor,
                 }, nsdict=SNSD)
@@ -2929,7 +2944,10 @@ class ODFTranslator(nodes.GenericNodeVisitor):
             }, nsdict=SNSD)
         thickness = self.settings.table_border_thickness
         if thickness is None:
-            line_style1 = table_style.border
+            if not table_style.border is None:
+                line_style1 = table_style.border
+            else:
+                line_style1 = '0.%03dcm solid #000000' 
         else:
             line_style1 = '0.%03dcm solid #000000' % (thickness, )
         el2_1 = SubElement(el2, 'style:table-cell-properties', attrib={
