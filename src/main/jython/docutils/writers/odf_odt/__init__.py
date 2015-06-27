@@ -963,7 +963,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
                     'text:style-name': self.rststyle('title'),
                     })
                 el.text = text
-                self.body_text_element.insert(0, el)
+                #self.body_text_element.insert(0, el)
         el = self.find_first_text_p(self.body_text_element)
         if el is not None:
             self.attach_page_style(el)

@@ -48,6 +48,8 @@ public class Rst2Odt extends JythonTask{
 
 
 
+
+
     String getSubstitutions(){
         docProperties.collect {key, value -> ".. |$key| ${translate(value)}\n\n"}.join()
     }
@@ -85,7 +87,7 @@ public class Rst2Odt extends JythonTask{
         def intermediate= new File(project.file(sourceFile).parentFile, project.file(sourceFile).name + '.tmp')
         intermediate.text = getSubstitutions() + project.file(sourceFile).text
 
-		args '-c', buildOdtCommand, "--traceback","--stylesheet=$stylesheet", "-l$language", intermediate, outputFile
+		args '-c', buildOdtCommand, "--traceback","--title=$docProperties.title","--stylesheet=$stylesheet", "-l$language", intermediate, outputFile
 		
 		super.exec()
 
