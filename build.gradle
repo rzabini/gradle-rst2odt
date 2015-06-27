@@ -48,5 +48,7 @@ jar {
 	from 'src/main/jython'
 	from 'build/jython/docutils-0.12'
 	from 'build/jython/Pygments-2.0.2'
+
+	from 'src/main/odt'
 }
 

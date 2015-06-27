@@ -14,6 +14,8 @@ public class Rst2Odt extends JythonTask{
     boolean updateIndex=true
     boolean exportPdf=true
 
+    def docProperties=[:]
+
 	void setStylesheet(stylesheet){
 		this.stylesheet=project.file(stylesheet).absolutePath
 		assert project.file(stylesheet).exists(), "stylesheet $stylesheet not found"
@@ -46,6 +48,28 @@ public class Rst2Odt extends JythonTask{
 
 
 
+    String getSubstitutions(){
+        docProperties.collect {key, value -> ".. |$key| ${translate(value)}\n\n"}.join()
+    }
+
+    def translate(val){
+
+        if (val =~ /\w::/)
+            val
+        else
+            "replace:: $val"
+    }
+
+    def properties(Closure closure){
+        closure.call()
+    }
+
+    def methodMissing(String name, args) {
+        docProperties.put(name, args[0])
+    }
+
+
+
 
 
     @TaskAction
@@ -54,7 +78,11 @@ public class Rst2Odt extends JythonTask{
 		assert stylesheet!=null: "please set stylesheet property on task $name"
 		assert sourceFile!=null: "please set sourceFile property on task $name"
 		assert outputFile!=null: "please set outputFile property on task $name"
-		args '-c', buildOdtCommand, "--traceback","--stylesheet=$stylesheet", "-l$language", sourceFile, outputFile
+
+        def intermediate= new File(project.file(sourceFile).parentFile, project.file(sourceFile).name + '.tmp')
+        intermediate.text = getSubstitutions() + project.file(sourceFile).text
+
+		args '-c', buildOdtCommand, "--traceback","--stylesheet=$stylesheet", "-l$language", intermediate, outputFile
 		
 		super.exec()
 
