@@ -14,7 +14,18 @@ public class Rst2OdtPlugin implements Plugin<Project> {
 			pythonpath project.files(this.class.getProtectionDomain().getCodeSource().location.path)
 			pythonpath 'org.apache.sanselan:sanselan:0.97-incubator'
 		}
-		
+
+        def zipFile = project.file(this.class.getProtectionDomain().getCodeSource().location.path)
+        def outputDir = project.file("${project.buildDir}/odt")
+
+        project.copy {
+            from ({project.zipTree(zipFile).files}){
+                include '**/rst2odt.odt'
+            }
+            into outputDir
+        }
+
+
 	}
 
 }
