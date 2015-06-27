@@ -40,7 +40,7 @@ public class Rst2Odt extends JythonTask{
 		assert stylesheet!=null: "please set stylesheet property on task $name"
 		assert sourceFile!=null: "please set sourceFile property on task $name"
 		assert outputFile!=null: "please set outputFile property on task $name"
-		args '-c', buildOdtCommand, "--stylesheet=$stylesheet", "-l$language", sourceFile, outputFile
+		args '-c', buildOdtCommand, "--traceback","--stylesheet=$stylesheet", "-l$language", sourceFile, outputFile
 		
 		super.exec()
 	}
