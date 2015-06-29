@@ -358,10 +358,11 @@ def split_words(line):
 
 
 class TableStyle(object):
-    def __init__(self, border=None, backgroundcolor=None, margin_top=None):
+    def __init__(self, border=None, backgroundcolor=None, margin_top=None, align=None):
         self.border = border
         self.backgroundcolor = backgroundcolor
         self.margin_top = margin_top
+        self.align = align
     def get_border_(self):
         return self.border_
     def set_border_(self, border):
@@ -377,6 +378,11 @@ class TableStyle(object):
     def set_margin_top_(self, margin_top):
         self.margin_top_ = margin_top
     margin_top = property(get_margin_top_, set_margin_top_)
+    def get_align_(self):
+        return self.align_
+    def set_align_(self, align):
+        self.align_ = align
+    align = property(get_align_, set_align_)
 
 BUILTIN_DEFAULT_TABLE_STYLE = TableStyle(
     border = '0.0007in solid #000000')
@@ -937,6 +943,10 @@ class ODFTranslator(nodes.GenericNodeVisitor):
                         'margin-top', ))
                     if property is not None and property != 'none':
                         tablestyle.margin_top = property
+                    property = properties.get('{%s}%s' % (CNSD['table'],
+                        'align', ))
+                    if property is not None and property != 'none':
+                        tablestyle.align = property
                 elif family == 'table-cell':
                     properties = stylenode.find(
                         '{%s}table-cell-properties' % (CNSD['style'], ))
@@ -2919,18 +2929,21 @@ class ODFTranslator(nodes.GenericNodeVisitor):
         margin_top = '0in'
         if table_style.margin_top is not None:
             margin_top = table_style.margin_top
+        align = 'left'
+        if table_style.align is not None:
+            align = table_style.align
         if table_style.backgroundcolor is None:
             el1_1 = SubElement(el1, 'style:table-properties', attrib={
                 'style:width': '7.59cm',
                 #'table:align': 'margins',
-                'table:align': 'left',
+                'table:align': align,
                 'fo:margin-top': margin_top,
                 'fo:margin-bottom': '0.10in',
                 }, nsdict=SNSD)
         else:
             el1_1 = SubElement(el1, 'style:table-properties', attrib={
                 'style:width': '7.59cm',
-                'table:align': 'margins',
+                'table:align': align,
                 'fo:margin-top': margin_top,
                 'fo:margin-bottom': '0.10in',
                 'fo:background-color': table_style.backgroundcolor,
