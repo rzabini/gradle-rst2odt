@@ -59,14 +59,21 @@ public class Rst2Odt extends JythonTask{
         if (val =~ /\w::/)
             val
         else
-        if (val =~ /\.png$/)
-            "image:: $val"
-            else
-                "replace:: $val"
+            "replace:: $val"
     }
 
     def properties(Closure closure){
         closure.call()
+    }
+
+
+    def image(Map params = [:], String  path){
+        String ret ="image:: $path"
+
+        ret += params.collect{k,v -> """
+    :$k: $v"""}.join()
+
+        ret
     }
 
     def methodMissing(String name, args) {
