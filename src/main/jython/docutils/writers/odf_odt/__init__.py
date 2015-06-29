@@ -2188,9 +2188,11 @@ class ODFTranslator(nodes.GenericNodeVisitor):
             filename, destination = self.image_dict[source]
             #imageobj = PIL.Image.open(filename, 'r')
             imageobj = Sanselan.getImageInfo(File(filename))
+            
             hdpi = imageobj.getPhysicalHeightDpi()
             wdpi = imageobj.getPhysicalWidthDpi()
-            dpi=(hdpi, wdpi)
+            if not hdpi == -1:
+                dpi=(hdpi, wdpi)
             # dpi information can be (xdpi, ydpi) or xydpi
             #try: iter(dpi)
             #except: dpi = (dpi, dpi)
@@ -2205,6 +2207,7 @@ class ODFTranslator(nodes.GenericNodeVisitor):
         width[0] *= scale
         height[0] *= scale
         
+   
         if width[1] == 'px': width = [width[0] / dpi[0], 'in']
         if height[1] == 'px': height = [height[0] / dpi[1], 'in']
 
