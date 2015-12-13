@@ -18,12 +18,12 @@ public class Rst2OdtPlugin implements Plugin<Project> {
         def zipFile = project.file(this.class.getProtectionDomain().getCodeSource().location.path)
         def outputDir = project.file("${project.buildDir}/odt")
 
-        project.copy {
+        /*project.copy {
             from ({project.zipTree(zipFile).files}){
-                include '**/rst2odt.odt'
+                include '** /rst2odt.odt'
             }
             into outputDir
-        }
+        }*/
 
 
 	}

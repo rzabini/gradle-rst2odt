@@ -1,15 +1,15 @@
 package rst2odt
 
-import jython.JythonTask
-
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.JavaExec
 
-public class Rst2Odt extends JythonTask{
+public class Rst2Odt extends JavaExec {
 
 	def stylesheet
 	def sourceFile
 	def outputFile
 	def language
+    def sofficeTrustedLocation
 
     boolean updateIndex=true
     boolean exportPdf=true
@@ -26,13 +26,17 @@ public class Rst2Odt extends JythonTask{
 		this.sourceFile=project.file(sourceFile).absolutePath
 		assert project.file(sourceFile).exists(), "sourceFile $sourceFile not found"
 	}
-	
-	void setOutputFile(outputFile){
-		this.outputFile=project.file(outputFile).absolutePath
-		def outputDir=project.file(outputFile).parentFile
-		project.mkdir(outputDir)
-		assert outputDir.exists(), "output directory $outputDir not found"
-	}
+
+    void setOutputFile(outputFile){
+        this.outputFile=project.file(outputFile).absolutePath
+        def outputDir=project.file(outputFile).parentFile
+        project.mkdir(outputDir)
+        assert outputDir.exists(), "output directory $outputDir not found"
+    }
+
+    void setSofficeTrustedLocation(dir){
+        this.sofficeTrustedLocation=project.file(dir).absolutePath
+    }
 
     void setLanguage(language){
         this.language=language
@@ -40,6 +44,9 @@ public class Rst2Odt extends JythonTask{
 
     void setUpdateIndex(updateIndex){
         this.updateIndex=updateIndex
+        if(updateIndex)
+            assert sofficeTrustedLocation &&
+                    project.file(sofficeTrustedLocation).exists(), "directory $sofficeTrustedLocation not valid"
     }
 
     void setExportPdf(exportPdf){
@@ -80,7 +87,11 @@ public class Rst2Odt extends JythonTask{
         docProperties.put(name, args[0])
     }
 
-
+    Rst2Odt() {
+        main 'org.python.util.jython'
+        classpath project.configurations.jython.asPath
+        dependsOn 'jythonClasses'
+    }
 
 
 
@@ -95,8 +106,10 @@ public class Rst2Odt extends JythonTask{
         intermediate.text = getSubstitutions() + project.file(sourceFile).text
 
 		args '-c', buildOdtCommand, "--traceback","--title=$docProperties.title","--stylesheet=$stylesheet", "-l$language", intermediate, outputFile
-		
-		super.exec()
+
+        systemProperties(['python.path': project.configurations.pythonpath.asPath])
+
+        super.exec()
 
         updateIndex()
 
@@ -119,13 +132,17 @@ public class Rst2Odt extends JythonTask{
 
     private void updateIndex() {
         if (updateIndex)
-            if (project.hasProperty('SOFFICE'))
+            if (project.hasProperty('SOFFICE')) {
+
+                project.file("${sofficeTrustedLocation}/rst2odt.odt") << getClass().getResource("/rst2odt.odt").openStream()
+
                 project.exec {
                     executable project.property('SOFFICE')
                     args '--invisible', '--headless', '--norestore',
-                            "${project.buildDir}/odt/rst2odt.odt", "macro://rst2odt/Standard.rst2odt.updateIndex(\"${outputFile}\")"
+                            "${sofficeTrustedLocation}/rst2odt.odt", "macro://rst2odt/Standard.rst2odt.updateIndex(\"${outputFile}\")"
 
                 }
+            }
             else
                 print "If you want to automatically update document index you need to set the project property SOFFICE"
     }
